@@ -1,0 +1,66 @@
+<resources>
+
+    <declare-styleable name="ChartView">
+        <attr name="chartBackground" format="color" />
+        <attr name="chartTitleColor" format="color" />
+        <attr name="checkboxTextColor" format="color" />
+        <attr name="chartNavigationOverlayColor" format="color" />
+        <attr name="chartNavigationOverlayBoundColor" format="color" />
+        <attr name="chartAxisTextColor" format="color" />
+        <attr name="dividerColor" format="color" />
+        <attr name="selectedPointInfoBackground" format="color"/>
+        <attr name="selectedPointInfoStrokeColor" format="color"/>
+        <attr name="selectedPointInfoTextColor" format="color"/>
+        <attr name="noDataMessageTextColor" format="color"/>
+        <attr name="chartNavigationOverlayBoundTickColor" format="color"/>
+        <attr name="moonDrawable" format="reference"/>
+    </declare-styleable>
+
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="titleTextColor">#ffffff</item>
+        <item name="chartAxisTextColor">#506372</item>
+        <item name="android:windowAnimationStyle">@style/AppTheme.WindowTransition</item>
+    </style>
+
+    <style name="AppThemeLight" parent="AppTheme">
+        <item name="moonDrawable">@drawable/ic_moon2</item>
+        <item name="chartTitleColor">#000000</item>
+        <item name="android:windowBackground">@color/light_window_background</item>
+        <item name="checkboxTextColor">#222222</item>
+        <item name="colorPrimary">#ffffff</item>
+        <item name="colorPrimaryDark">#ffffff</item>
+        <item name="chartBackground">#ffffff</item>
+        <item name="chartNavigationOverlayColor">#99E2EEF9</item>
+        <item name="chartNavigationOverlayBoundColor">#7f86A9C4</item>
+        <item name="chartNavigationOverlayBoundTickColor">#ffffff</item>
+        <item name="dividerColor">#ebebeb</item>
+        <item name="selectedPointInfoBackground">#FFFFFF</item>
+        <item name="selectedPointInfoTextColor">#222222</item>
+        <item name="selectedPointInfoStrokeColor">#F0F0F0</item>
+        <item name="noDataMessageTextColor">#555555</item>
+    </style>
+
+    <style name="AppThemeDark" parent="AppTheme">
+        <item name="moonDrawable">@drawable/ic_moon</item>
+        <item name="chartTitleColor">#ffffff</item>
+        <item name="android:windowBackground">@color/dark_window_background</item>
+        <item name="checkboxTextColor">#ECECED</item>
+        <item name="colorPrimary">#212D3B</item>
+        <item name="colorPrimaryDark">#212D3B</item>
+        <item name="chartBackground">#1D2733</item>
+        <item name="chartNavigationOverlayColor">#99304259</item>
+        <item name="chartNavigationOverlayBoundColor">#7f6F899E</item>
+        <item name="chartNavigationOverlayBoundTickColor">#ffffff</item>
+        <item name="dividerColor">#333333</item>
+        <item name="selectedPointInfoBackground">#202B38</item>
+        <item name="selectedPointInfoTextColor">#E5EFF5</item>
+        <item name="selectedPointInfoStrokeColor">#151E27</item>
+        <item name="noDataMessageTextColor">#dddddd</item>
+    </style>
+
+    <style name="AppTheme.WindowTransition">
+        <item name="android:windowEnterAnimation">@android:anim/fade_in</item>
+        <item name="android:windowExitAnimation">@android:anim/fade_out</item>
+    </style>
+
+</resources>
