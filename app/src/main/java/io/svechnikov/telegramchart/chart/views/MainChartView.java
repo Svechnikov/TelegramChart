@@ -16,15 +16,13 @@ import io.svechnikov.telegramchart.chart.data.NavigationState;
 import io.svechnikov.telegramchart.chart.NavigationStateListener;
 import io.svechnikov.telegramchart.chart.data.Axis;
 import io.svechnikov.telegramchart.chart.data.Entity;
-import io.svechnikov.telegramchart.chart.views.horizontal_axis.AnimatedHorizontalAxisView;
-import io.svechnikov.telegramchart.chart.views.horizontal_axis.AnimatedHorizontalAxisView;
 
 public class MainChartView extends RelativeLayout
         implements NavigationBoundsListener, NavigationStateListener {
 
     private final VerticalAxisView verticalAxisView;
     private final MainPlotView plotView;
-    private final AnimatedHorizontalAxisView horizontalAxisView;
+    private final HorizontalAxisView horizontalAxisView;
     private final List<Entity> entities = new ArrayList<>();
     private NavigationBounds currentBounds;
 
@@ -144,9 +142,9 @@ public class MainChartView extends RelativeLayout
         return view;
     }
 
-    private AnimatedHorizontalAxisView createHorizontalAxis() {
+    private HorizontalAxisView createHorizontalAxis() {
         Context context = getContext();
-        AnimatedHorizontalAxisView view = new AnimatedHorizontalAxisView(context);
+        HorizontalAxisView view = new HorizontalAxisView(context);
         view.setId(R.id.horizontalAxisView);
         int height = context.getResources()
                 .getDimensionPixelSize(

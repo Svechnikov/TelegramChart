@@ -171,9 +171,6 @@ public class MainActivity extends FragmentActivity {
                 }
 
                 for (int i = 0; i < jsonArray.length(); i++) {
-                    if (i != 4) {
-                        continue;
-                    }
                     JSONObject chartData = jsonArray.getJSONObject(i);
                     addChart(activity, chartData, i);
                 }

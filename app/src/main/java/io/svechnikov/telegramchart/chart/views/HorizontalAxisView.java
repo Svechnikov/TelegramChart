@@ -1,4 +1,4 @@
-package io.svechnikov.telegramchart.chart.views.horizontal_axis;
+package io.svechnikov.telegramchart.chart.views;
 
 import android.animation.ValueAnimator;
 import android.content.Context;
@@ -22,7 +22,7 @@ import io.svechnikov.telegramchart.chart.data.Axis;
 import io.svechnikov.telegramchart.chart.data.NavigationBounds;
 import io.svechnikov.telegramchart.chart.data.NavigationState;
 
-public class AnimatedHorizontalAxisView extends View
+public class HorizontalAxisView extends View
         implements NavigationBoundsListener, NavigationStateListener {
 
     private static final float SCALE_THRESHOLD = 0.8f;
@@ -44,15 +44,15 @@ public class AnimatedHorizontalAxisView extends View
 
     private final Rect rect = new Rect();
 
-    public AnimatedHorizontalAxisView(Context context) {
+    public HorizontalAxisView(Context context) {
         this(context, null);
     }
 
-    public AnimatedHorizontalAxisView(Context context, AttributeSet attrs) {
+    public HorizontalAxisView(Context context, AttributeSet attrs) {
         this(context, attrs, -1);
     }
 
-    public AnimatedHorizontalAxisView(Context context, AttributeSet attrs, int defStyleAttr) {
+    public HorizontalAxisView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
         Resources r = getResources();
