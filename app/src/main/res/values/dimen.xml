@@ -2,8 +2,10 @@
 <resources>
     <dimen name="appbar_theme_switch_margin_right">20dp</dimen>
     <dimen name="no_data_message_text_size">20sp</dimen>
-    <dimen name="chart_margin_bottom">50dp</dimen>
-    <dimen name="chart_title_size">17sp</dimen>
+    <dimen name="chart_margin_top">30dp</dimen>
+    <dimen name="chart_margin_bottom">20dp</dimen>
+    <dimen name="chart_title_size">16sp</dimen>
+    <dimen name="chart_bound_range_text_size">12sp</dimen>
     <dimen name="chart_padding_horizontal">10dp</dimen>
     <dimen name="chart_padding_top">10dp</dimen>
     <dimen name="chart_main_stroke_width">2dp</dimen>
@@ -16,8 +18,10 @@
     <dimen name="chart_main_chart_selected_circle_radius">5dp</dimen>
     <dimen name="chart_navigation_chart_height">50dp</dimen>
     <dimen name="chart_navigation_chart_margin_vertical">20dp</dimen>
-    <dimen name="chart_navigation_chart_overlay_hor_bound_width">5dp</dimen>
-    <dimen name="chart_navigation_chart_overlay_ver_bound_width">2dp</dimen>
+    <dimen name="chart_navigation_chart_overlay_hor_bound_width">11dp</dimen>
+    <dimen name="chart_navigation_chart_overlay_hor_bound_tick_width">2dp</dimen>
+    <dimen name="chart_navigation_chart_overlay_hor_bound_tick_height">12dp</dimen>
+    <dimen name="chart_navigation_chart_overlay_ver_bound_width">1dp</dimen>
     <dimen name="chart_checkbox_margin_top">7dp</dimen>
     <dimen name="chart_checkbox_margin_bottom">7dp</dimen>
     <dimen name="chart_checkbox_divider_height">1dp</dimen>
@@ -29,7 +33,7 @@
     <dimen name="chart_selected_point_info_padding">10dp</dimen>
     <dimen name="chart_selected_point_info_title_text_size">15sp</dimen>
     <dimen name="chart_selected_point_info_row_top_margin">10dp</dimen>
-    <dimen name="chart_selected_point_info_corner_radius">4dp</dimen>
+    <dimen name="chart_selected_point_info_corner_radius">8dp</dimen>
     <dimen name="chart_selected_point_info_stroke_width">2dp</dimen>
     <dimen name="chart_selected_point_info_hor_offset">10dp</dimen>
     <dimen name="chart_selected_point_info_value_margin_right">20dp</dimen>

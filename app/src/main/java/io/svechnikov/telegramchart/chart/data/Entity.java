@@ -7,6 +7,7 @@ public class Entity {
     public final int[] values;
 
     private final int maxValue;
+    private final int minValue;
 
     private boolean isVisible = true;
 
@@ -15,12 +16,15 @@ public class Entity {
         this.title = title;
         this.values = values;
 
-        int max = 0;
+        int max = Integer.MIN_VALUE;
+        int min = Integer.MAX_VALUE;
 
         for (int i = 0; i < values.length; i++) {
             max = Math.max(values[i], max);
+            min = Math.min(values[i], min);
         }
 
+        minValue = min;
         maxValue = max;
     }
 
@@ -34,5 +38,9 @@ public class Entity {
 
     public int maxValue() {
         return maxValue;
+    }
+
+    public int minValue() {
+        return minValue;
     }
 }

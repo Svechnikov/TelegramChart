@@ -1,5 +1,7 @@
 package io.svechnikov.telegramchart.chart.data;
 
+import java.util.Date;
+
 public class Axis {
 
     public final Point[] values;
@@ -15,13 +17,21 @@ public class Axis {
     public static class Point {
 
         public final int index;
-        public final String fullName;
+        public final String selectedName;
+        public final String boundName;
         public final String shortName;
+        public final Date date;
 
-        public Point(int index, String fullName, String shortName) {
+        public Point(int index,
+                     String selectedName,
+                     String boundName,
+                     String shortName,
+                     Date date) {
             this.index = index;
-            this.fullName = fullName;
+            this.selectedName = selectedName;
+            this.boundName = boundName;
             this.shortName = shortName;
+            this.date = date;
         }
 
         @Override
@@ -33,7 +43,7 @@ public class Axis {
         public String toString() {
             return "Point{" +
                     "index=" + index +
-                    ", fullName='" + fullName + '\'' +
+                    ", selectedName='" + selectedName + '\'' +
                     ", shortName='" + shortName + '\'' +
                     '}';
         }

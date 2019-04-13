@@ -5,6 +5,8 @@ import android.os.Parcelable;
 
 import java.util.Arrays;
 
+import timber.log.Timber;
+
 public class ChartViewState implements Parcelable {
 
     public final NavigationBounds navigationBounds;
@@ -21,9 +23,7 @@ public class ChartViewState implements Parcelable {
 
     public ChartViewState(Parcel parcel) {
         navigationBounds = parcel.readParcelable(NavigationBounds.class.getClassLoader());
-        int entityCount = parcel.readInt();
-        entityVisibility = new boolean[entityCount];
-        parcel.readBooleanArray(entityVisibility);
+        entityVisibility = parcel.createBooleanArray();
         selectedPointIndex = parcel.readInt();
     }
 
@@ -35,7 +35,6 @@ public class ChartViewState implements Parcelable {
     @Override
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeParcelable(navigationBounds, flags);
-        dest.writeInt(entityVisibility.length);
         dest.writeBooleanArray(entityVisibility);
         dest.writeInt(selectedPointIndex);
     }

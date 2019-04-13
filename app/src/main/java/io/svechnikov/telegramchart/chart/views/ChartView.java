@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -20,18 +21,22 @@ import java.util.List;
 
 import androidx.core.widget.CompoundButtonCompat;
 import io.svechnikov.telegramchart.R;
-import io.svechnikov.telegramchart.chart.data.Axis;
+import io.svechnikov.telegramchart.chart.NavigationBoundsListener;
+import io.svechnikov.telegramchart.chart.data.ChartData;
 import io.svechnikov.telegramchart.chart.data.ChartViewState;
 import io.svechnikov.telegramchart.chart.data.Entity;
 import io.svechnikov.telegramchart.chart.data.NavigationBounds;
+import io.svechnikov.telegramchart.chart.views.chart.MainChartView;
+import io.svechnikov.telegramchart.chart.views.navigation.NavigationChartView;
 
 public class ChartView extends LinearLayout {
 
-    private Axis horizontalAxis;
     private final List<Entity> entities = new ArrayList<>();
     private final List<CheckBox> checkBoxes = new ArrayList<>();
 
+    private ChartData chartData;
     private TextView titleView;
+    private TextView boundsRangeTextView;
     private MainChartView mainChartView;
     private NavigationChartView navigationChartView;
     private final int chartTitleColor;
@@ -51,11 +56,6 @@ public class ChartView extends LinearLayout {
     public ChartView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
 
-        setOrientation(VERTICAL);
-
-        createMainChartView();
-        createNavigationChartView();
-
         int[] style = {
                 R.attr.chartBackground,
                 R.attr.chartTitleColor,
@@ -69,9 +69,55 @@ public class ChartView extends LinearLayout {
         dividerColor = ta.getColor(3, Color.BLACK);
         ta.recycle();
 
+        setOrientation(VERTICAL);
+
+        createTitleContainer();
+        createMainChartView();
+        createNavigationChartView();
+
         int paddingTop = context.getResources()
                 .getDimensionPixelSize(R.dimen.chart_padding_top);
         setPadding(0, paddingTop, 0, 0);
+    }
+
+    private void createTitleContainer() {
+        RelativeLayout container = new RelativeLayout(getContext());
+
+        Resources r = getResources();
+        int paddingHorizontal = r.getDimensionPixelSize(
+                R.dimen.chart_padding_horizontal);
+        int paddingVertical = r.getDimensionPixelSize(
+                R.dimen.chart_padding_horizontal);
+
+        titleView = new TextView(getContext());
+        titleView.setPadding(
+                paddingHorizontal, paddingVertical,
+                paddingHorizontal, paddingVertical);
+        titleView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                r.getDimensionPixelSize(R.dimen.chart_title_size));
+        titleView.setTextColor(chartTitleColor);
+        RelativeLayout.LayoutParams titleLp = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        container.addView(titleView, titleLp);
+
+        boundsRangeTextView = new TextView(getContext());
+        boundsRangeTextView.setPadding(
+                paddingHorizontal, paddingVertical,
+                paddingHorizontal, paddingVertical);
+        boundsRangeTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                r.getDimensionPixelSize(R.dimen.chart_bound_range_text_size));
+        boundsRangeTextView.setTextColor(chartTitleColor);
+        RelativeLayout.LayoutParams boundsRangeLp = new RelativeLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        boundsRangeLp.addRule(RelativeLayout.CENTER_VERTICAL, RelativeLayout.TRUE);
+        boundsRangeLp.addRule(RelativeLayout.ALIGN_PARENT_RIGHT, RelativeLayout.TRUE);
+        container.addView(boundsRangeTextView, boundsRangeLp);
+
+        addView(container, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
     }
 
     @Override
@@ -121,12 +167,6 @@ public class ChartView extends LinearLayout {
         mainChartView.setVerticalItemsCount(count);
     }
 
-    public void setHorizontalAxis(Axis horizontalAxis) {
-        this.horizontalAxis = horizontalAxis;
-
-        mainChartView.setHorizontalAxis(horizontalAxis);
-    }
-
     public void addEntities(List<Entity> entities) {
         for (Entity entity: entities) {
             addEntity(entity);
@@ -134,10 +174,7 @@ public class ChartView extends LinearLayout {
     }
 
     public void addEntity(final Entity entity) {
-        if (horizontalAxis == null) {
-            throw new IllegalStateException("You should set horizontalAxis first");
-        }
-        if (entity.values.length != horizontalAxis.values.length) {
+        if (entity.values.length != chartData.axis.values.length) {
             throw new IllegalArgumentException(
                     "Entity valuesByEntity must correspond to horizontalAxis " +
                             "marks (they must be equal is size)");
@@ -261,17 +298,23 @@ public class ChartView extends LinearLayout {
         navigationChartView = new NavigationChartView(getContext());
         navigationChartView.addBoundsListener(mainChartView);
         navigationChartView.addStateListener(mainChartView);
+        navigationChartView.addBoundsListener(new NavigationBoundsListener() {
+            @Override
+            public void onNavigationBoundsChanged(NavigationBounds bounds) {
+                int leftIndex = Math.round(bounds.left);
+                int rightIndex = Math.round(bounds.right);
+
+                String left = chartData.axis.values[leftIndex].boundName;
+                String right = chartData.axis.values[rightIndex].boundName;
+
+                boundsRangeTextView.setText(left + " - " + right);
+            }
+        });
         Resources r = getResources();
         int height = r.getDimensionPixelSize(
                 R.dimen.chart_navigation_chart_height);
-        LinearLayout.LayoutParams lp =
-                new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, height);
-        int marginHorizontal = r.getDimensionPixelSize(
-                R.dimen.chart_padding_horizontal);
-        lp.leftMargin = marginHorizontal;
-        lp.rightMargin = marginHorizontal;
-        addView(navigationChartView, lp);
+        addView(navigationChartView, new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, height));
     }
 
     private void createMainChartView() {
@@ -286,24 +329,16 @@ public class ChartView extends LinearLayout {
         addView(mainChartView);
     }
 
-    public void setTitle(String title) {
-        Context context = getContext();
-        if (titleView == null) {
-            Resources r = getResources();
-            int paddingHorizontal = r.getDimensionPixelSize(
-                    R.dimen.chart_padding_horizontal);
-            int paddingVertical = r.getDimensionPixelSize(
-                    R.dimen.chart_padding_horizontal);
+    public void setChartData(ChartData chartData) {
+        this.chartData = chartData;
 
-            titleView = new TextView(context);
-            titleView.setPadding(
-                    paddingHorizontal, paddingVertical,
-                    paddingHorizontal, paddingVertical);
-            titleView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                    r.getDimensionPixelSize(R.dimen.chart_title_size));
-            titleView.setTextColor(chartTitleColor);
-            addView(titleView, 0);
-        }
+        setTitle(chartData.title);
+        mainChartView.setHorizontalAxis(chartData.axis);
+        navigationChartView.setChartData(chartData);
+        addEntities(chartData.entities);
+    }
+
+    public void setTitle(String title) {
         titleView.setText(title);
     }
 
