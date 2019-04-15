@@ -1,5 +1,6 @@
 package io.svechnikov.telegramchart.chart;
 
+import android.content.Context;
 import android.graphics.Color;
 
 import org.json.JSONArray;
@@ -18,14 +19,31 @@ import io.svechnikov.telegramchart.chart.data.Entity;
 
 public class ChartParser {
 
-    private final SimpleDateFormat selectedDateFormat =
-            new SimpleDateFormat("EEE, dd MMM yyyy", Locale.ENGLISH);
+    private final SimpleDateFormat selectedDateFormat;
 
-    private final SimpleDateFormat boundDateFormat =
-            new SimpleDateFormat("dd MMMM yyyy", Locale.ENGLISH);
+    private final SimpleDateFormat boundDateFormat;
 
-    private final SimpleDateFormat shortDateFormat =
-            new SimpleDateFormat("MMM dd", Locale.ENGLISH);
+    private final SimpleDateFormat shortDateFormat;
+
+    public ChartParser(Context context) {
+        Locale currentLocale;
+
+        try {
+            currentLocale = context.getResources().getConfiguration().locale;
+        }
+        catch (Exception e) {
+            currentLocale = Locale.US;
+        }
+
+        selectedDateFormat =
+                new SimpleDateFormat("EEE, dd MMM yyyy", currentLocale);
+
+        boundDateFormat =
+                new SimpleDateFormat("dd MMMM yyyy", currentLocale);
+
+        shortDateFormat =
+                new SimpleDateFormat("MMM dd", currentLocale);
+    }
 
     public ChartData parse(String title,
                            String chartJson,

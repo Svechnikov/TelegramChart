@@ -1,9 +1,9 @@
 <resources>
 
     <declare-styleable name="ChartView">
+        <attr name="toolbarTextColor" format="color" />
         <attr name="chartBackground" format="color" />
         <attr name="chartTitleColor" format="color" />
-        <attr name="checkboxTextColor" format="color" />
         <attr name="chartNavigationOverlayColor" format="color" />
         <attr name="chartNavigationOverlayBoundColor" format="color" />
         <attr name="chartAxisTextColor" format="color" />
@@ -23,17 +23,17 @@
     </style>
 
     <style name="AppThemeLight" parent="AppTheme">
-        <item name="moonDrawable">@drawable/ic_moon2</item>
+        <item name="toolbarTextColor">#000000</item>
+        <item name="moonDrawable">@drawable/ic_moon_day</item>
         <item name="chartTitleColor">#000000</item>
         <item name="android:windowBackground">@color/light_window_background</item>
-        <item name="checkboxTextColor">#222222</item>
         <item name="colorPrimary">#ffffff</item>
         <item name="colorPrimaryDark">#ffffff</item>
         <item name="chartBackground">#ffffff</item>
         <item name="chartNavigationOverlayColor">#99E2EEF9</item>
         <item name="chartNavigationOverlayBoundColor">#7f86A9C4</item>
         <item name="chartNavigationOverlayBoundTickColor">#ffffff</item>
-        <item name="dividerColor">#ebebeb</item>
+        <item name="dividerColor">#19182D3B</item>
         <item name="selectedPointInfoBackground">#FFFFFF</item>
         <item name="selectedPointInfoTextColor">#222222</item>
         <item name="selectedPointInfoStrokeColor">#F0F0F0</item>
@@ -41,17 +41,17 @@
     </style>
 
     <style name="AppThemeDark" parent="AppTheme">
-        <item name="moonDrawable">@drawable/ic_moon</item>
+        <item name="toolbarTextColor">#ffffff</item>
+        <item name="moonDrawable">@drawable/ic_moon_night</item>
         <item name="chartTitleColor">#ffffff</item>
         <item name="android:windowBackground">@color/dark_window_background</item>
-        <item name="checkboxTextColor">#ECECED</item>
         <item name="colorPrimary">#212D3B</item>
         <item name="colorPrimaryDark">#212D3B</item>
         <item name="chartBackground">#1D2733</item>
         <item name="chartNavigationOverlayColor">#99304259</item>
         <item name="chartNavigationOverlayBoundColor">#7f6F899E</item>
         <item name="chartNavigationOverlayBoundTickColor">#ffffff</item>
-        <item name="dividerColor">#333333</item>
+        <item name="dividerColor">#19ffffff</item>
         <item name="selectedPointInfoBackground">#202B38</item>
         <item name="selectedPointInfoTextColor">#E5EFF5</item>
         <item name="selectedPointInfoStrokeColor">#151E27</item>

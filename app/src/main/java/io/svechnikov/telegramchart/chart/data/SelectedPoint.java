@@ -9,6 +9,7 @@ public class SelectedPoint {
     public float x = -1;
     public final Map<Entity, Integer> values = new LinkedHashMap<>(2);
     public final Map<Entity, Float> coordsY = new LinkedHashMap<>(2);
+    public final Map<Entity, Integer> percentValues = new LinkedHashMap<>(2);
 
     public void addValue(Entity entity, int value) {
         values.put(entity, value);

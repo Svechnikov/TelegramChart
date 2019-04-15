@@ -9,6 +9,7 @@
         android:id="@+id/appBarLayout"
         android:background="?colorPrimary"
         app:title="@string/charts_title"
+        app:titleTextColor="?toolbarTextColor"
         android:layout_height="wrap_content"
         android:layout_width="match_parent">
         <ImageButton
@@ -20,8 +21,15 @@
             android:layout_height="wrap_content" />
     </androidx.appcompat.widget.Toolbar>
 
-    <ScrollView
+    <View
         android:layout_below="@id/appBarLayout"
+        android:id="@+id/toolbar_shadow"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/appbar_shadow_height"
+        android:background="@drawable/toolbar_shadow_background" />
+
+    <ScrollView
+        android:layout_below="@id/toolbar_shadow"
         android:id="@+id/scrollView"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -31,5 +39,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content" />
     </ScrollView>
+
+    <ProgressBar
+        android:visibility="gone"
+        style="?android:attr/android:progressBarStyleLarge"
+        android:layout_centerInParent="true"
+        android:id="@+id/progressBar"
+        android:indeterminate="false"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
 
 </RelativeLayout>

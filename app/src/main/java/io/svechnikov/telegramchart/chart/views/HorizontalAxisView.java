@@ -25,7 +25,7 @@ import io.svechnikov.telegramchart.chart.data.NavigationState;
 public class HorizontalAxisView extends View
         implements NavigationBoundsListener, NavigationStateListener {
 
-    private static final float SCALE_THRESHOLD = 0.8f;
+    private static final float SCALE_THRESHOLD = 0.9f;
 
     private Axis axis;
     private NavigationBounds navigationBounds;

@@ -6,7 +6,8 @@ public class ServiceLocator {
 
     private static ServiceLocator instance;
 
-    private ChartsRepo chartsRepo;
+    private final ChartsRepo chartsRepo;
+    private final SettingsRepo settingsRepo;
 
     public static ServiceLocator getInstance(Context context) {
         if (instance == null) {
@@ -17,9 +18,14 @@ public class ServiceLocator {
 
     public ServiceLocator(Context context) {
         chartsRepo = new ChartsRepo(context);
+        settingsRepo = new SettingsRepo(context);
     }
 
     public ChartsRepo chartsRepo() {
         return chartsRepo;
+    }
+
+    public SettingsRepo settingsRepo() {
+        return settingsRepo;
     }
 }

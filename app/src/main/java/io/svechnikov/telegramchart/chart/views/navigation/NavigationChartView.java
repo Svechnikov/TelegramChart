@@ -12,6 +12,7 @@ import android.util.AttributeSet;
 import android.util.DisplayMetrics;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
@@ -27,11 +28,11 @@ import io.svechnikov.telegramchart.chart.data.ChartData;
 import io.svechnikov.telegramchart.chart.data.Entity;
 import io.svechnikov.telegramchart.chart.data.NavigationBounds;
 import io.svechnikov.telegramchart.chart.data.NavigationState;
-import timber.log.Timber;
+import io.svechnikov.telegramchart.chart.views.ViewUtils;
 
 public class NavigationChartView extends FrameLayout {
 
-    private final NavigationPlotView plotView;
+    private NavigationPlotView plotView;
     private boolean boundsInit = false;
     private final float[] bounds = new float[]{0, 0}; // bounds in axis units
 
@@ -56,10 +57,8 @@ public class NavigationChartView extends FrameLayout {
     private final List<NavigationBoundsListener>
             boundsListeners = new ArrayList<>();
     private int minVisibleItemsCount;
-    private float prevCoordX = -1;
     private Bitmap leftSliderBitmap;
     private Bitmap rightSliderBitmap;
-    private ChartData chartData;
 
     public NavigationChartView(Context context) {
         this(context, null);
@@ -79,12 +78,6 @@ public class NavigationChartView extends FrameLayout {
 
         paddingHorizontal = r.getDimensionPixelSize(
                 R.dimen.chart_padding_horizontal);
-
-        plotView = new NavigationPlotView(context);
-
-        addView(plotView, new FrameLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.MATCH_PARENT));
 
         selectionHorizontalBoundWidth = r.getDimensionPixelSize(
                 R.dimen.chart_navigation_chart_overlay_hor_bound_width);
@@ -108,8 +101,43 @@ public class NavigationChartView extends FrameLayout {
     }
 
     public void setChartData(ChartData chartData) {
-        this.chartData = chartData;
+        switch (chartData.type) {
+            case ChartData.TYPE_LINE:
+            case ChartData.TYPE_Y_SCALED:
+                plotView = new NavigationLinePlotView(getContext());
+                break;
+            case ChartData.TYPE_STACKED:
+            case ChartData.TYPE_BAR:
+                plotView = new NavigationStackedPlotView(getContext());
+                break;
+            case ChartData.TYPE_PERCENTAGE:
+                plotView = new NavigationPercentagePlotView(getContext());
+                break;
+            default:
+                throw new IllegalArgumentException();
+        }
+
+        addView((View) plotView, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+
         plotView.setChartData(chartData);
+
+        for (Entity entity: chartData.entities) {
+            if (elementsCount == -1) {
+                elementsCount = entity.values.length;
+            }
+
+            if (!boundsInit) {
+                boundsInit = true;
+                bounds[0] = elementsCount * 0.55f;
+                bounds[1] = elementsCount;
+            }
+
+            invalidate();
+
+            notifyBoundsListener();
+        }
     }
 
     public NavigationBounds getBounds() {
@@ -138,11 +166,6 @@ public class NavigationChartView extends FrameLayout {
         if (coordX > maxRightBound) {
             coordX = maxRightBound;
         }
-        // not doing anything if coords not changed
-        if (coordX == prevCoordX) {
-            return true;
-        }
-        prevCoordX = coordX;
         switch (event.getAction()) {
             case MotionEvent.ACTION_MOVE:
                 switch (currentState) {
@@ -246,19 +269,22 @@ public class NavigationChartView extends FrameLayout {
 
         float cornerRadius = selectionHorizontalBoundWidth / 2f;
         if (isLeft) {
-            canvas.drawPath(RoundedRect(0,
+            ViewUtils.makePathRounded(path,
+                    0,
                     0,
                     selectionHorizontalBoundWidth,
                     height,
-                    cornerRadius, cornerRadius, true, false, false, true), paint);
+                    cornerRadius, cornerRadius, true, false, false, true);
         }
         else {
-            canvas.drawPath(RoundedRect(0,
+            ViewUtils.makePathRounded(path,
+                    0,
                     0,
                     selectionHorizontalBoundWidth,
                     height,
-                    cornerRadius, cornerRadius, false, true, true, false), paint);
+                    cornerRadius, cornerRadius, false, true, true, false);
         }
+        canvas.drawPath(path, paint);
 
         // slider ticks
         paint.setColor(overlayBoundTickColor);
@@ -268,76 +294,6 @@ public class NavigationChartView extends FrameLayout {
                 sliderTickTop + sliderTickHeight, paint);
 
         return bitmap;
-    }
-
-    public Path RoundedRect(float left,
-                            float top,
-                            float right,
-                            float bottom,
-                            float rx,
-                            float ry,
-                            boolean tl,
-                            boolean tr,
-                            boolean br,
-                            boolean bl) {
-        if (rx < 0) {
-            rx = 0;
-        }
-        if (ry < 0) {
-            ry = 0;
-        }
-        float width = right - left;
-        float height = bottom - top;
-        if (rx > width / 2) {
-            rx = width / 2;
-        }
-        if (ry > height / 2) {
-            ry = height / 2;
-        }
-        float widthMinusCorners = (width - (2 * rx));
-        float heightMinusCorners = (height - (2 * ry));
-
-        path.reset();
-        path.moveTo(right, top + ry);
-        if (tr) {
-            path.rQuadTo(0, -ry, -rx, -ry);//top-right corner
-        }
-        else {
-            path.rLineTo(0, -ry);
-            path.rLineTo(-rx,0);
-        }
-
-        path.rLineTo(-widthMinusCorners, 0);
-        if (tl)
-            path.rQuadTo(-rx, 0, -rx, ry); //top-left corner
-        else {
-            path.rLineTo(-rx, 0);
-            path.rLineTo(0,ry);
-        }
-        path.rLineTo(0, heightMinusCorners);
-
-        if (bl) {
-            path.rQuadTo(0, ry, rx, ry);//bottom-left corner
-        }
-        else {
-            path.rLineTo(0, ry);
-            path.rLineTo(rx,0);
-        }
-
-        path.rLineTo(widthMinusCorners, 0);
-        if (br) {
-            path.rQuadTo(rx, 0, rx, -ry); //bottom-right corner
-        }
-        else {
-            path.rLineTo(rx,0);
-            path.rLineTo(0, -ry);
-        }
-
-        path.rLineTo(0, -heightMinusCorners);
-
-        path.close();
-
-        return path;
     }
 
     private void calculateMovingState(float x) {
@@ -509,23 +465,6 @@ public class NavigationChartView extends FrameLayout {
     public void setBounds(NavigationBounds bounds) {
         this.bounds[0] = bounds.left;
         this.bounds[1] = bounds.right;
-
-        notifyBoundsListener();
-    }
-
-    public void addEntity(Entity entity) {
-        if (elementsCount == -1) {
-            elementsCount = entity.values.length;
-        }
-
-        if (!boundsInit) {
-            boundsInit = true;
-            bounds[0] = 0;
-            bounds[1] = elementsCount / 2f;
-        }
-        plotView.addEntity(entity);
-
-        invalidate();
 
         notifyBoundsListener();
     }
