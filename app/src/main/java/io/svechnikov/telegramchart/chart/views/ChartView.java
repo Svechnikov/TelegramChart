@@ -1,25 +1,23 @@
 package io.svechnikov.telegramchart.chart.views;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.content.res.Resources;
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.TypedValue;
 import android.view.Gravity;
-import android.view.View;
 import android.view.ViewGroup;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import androidx.core.widget.CompoundButtonCompat;
 import io.svechnikov.telegramchart.R;
 import io.svechnikov.telegramchart.chart.NavigationBoundsListener;
 import io.svechnikov.telegramchart.chart.data.ChartData;
@@ -31,19 +29,16 @@ import io.svechnikov.telegramchart.chart.views.navigation.NavigationChartView;
 
 public class ChartView extends LinearLayout {
 
-    private final List<Entity> entities = new ArrayList<>();
-    private final List<CheckBox> checkBoxes = new ArrayList<>();
-
     private ChartData chartData;
     private TextView titleView;
     private TextView boundsRangeTextView;
     private MainChartView mainChartView;
     private NavigationChartView navigationChartView;
     private final int chartTitleColor;
-    private final int checkboxTextColor;
-    private final int dividerColor;
     private boolean noDataMessageShowing;
     private LinearLayout noDataMessageView;
+    private ViewGroup checkboxesContainer;
+    private final Map<Entity, CoolCheckbox> checkboxes = new HashMap<>();
 
     public ChartView(Context context) {
         this(context, null);
@@ -58,15 +53,11 @@ public class ChartView extends LinearLayout {
 
         int[] style = {
                 R.attr.chartBackground,
-                R.attr.chartTitleColor,
-                R.attr.checkboxTextColor,
-                R.attr.dividerColor};
+                R.attr.chartTitleColor};
 
         TypedArray ta = context.obtainStyledAttributes(style);
         setBackgroundColor(ta.getColor(0, Color.WHITE));
         chartTitleColor = ta.getColor(1, Color.BLACK);
-        checkboxTextColor = ta.getColor(2, Color.BLACK);
-        dividerColor = ta.getColor(3, Color.BLACK);
         ta.recycle();
 
         setOrientation(VERTICAL);
@@ -78,6 +69,22 @@ public class ChartView extends LinearLayout {
         int paddingTop = context.getResources()
                 .getDimensionPixelSize(R.dimen.chart_padding_top);
         setPadding(0, paddingTop, 0, 0);
+    }
+
+    private void createCheckboxesContainer() {
+        checkboxesContainer = new FlowLayout(getContext());
+
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT);
+        Resources r = getResources();
+        int horizontalMargin = r.getDimensionPixelSize(
+                R.dimen.chart_padding_horizontal);
+        int topMargin = r.getDimensionPixelSize(
+                R.dimen.chart_checkbox_margin_vertical);
+
+        checkboxesContainer.setPadding(horizontalMargin, topMargin, horizontalMargin, 0);
+        addView(checkboxesContainer, lp);
     }
 
     private void createTitleContainer() {
@@ -95,6 +102,7 @@ public class ChartView extends LinearLayout {
                 paddingHorizontal, paddingVertical);
         titleView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                 r.getDimensionPixelSize(R.dimen.chart_title_size));
+        titleView.setTypeface(null, Typeface.BOLD);
         titleView.setTextColor(chartTitleColor);
         RelativeLayout.LayoutParams titleLp = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -107,6 +115,7 @@ public class ChartView extends LinearLayout {
                 paddingHorizontal, paddingVertical);
         boundsRangeTextView.setTextSize(TypedValue.COMPLEX_UNIT_PX,
                 r.getDimensionPixelSize(R.dimen.chart_bound_range_text_size));
+        boundsRangeTextView.setTypeface(null, Typeface.BOLD);
         boundsRangeTextView.setTextColor(chartTitleColor);
         RelativeLayout.LayoutParams boundsRangeLp = new RelativeLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -131,8 +140,11 @@ public class ChartView extends LinearLayout {
         }
         navigationChartView.setBounds(state.navigationBounds);
 
-        for (int i = 0; i < state.entityVisibility.length && i < checkBoxes.size(); i++) {
-            checkBoxes.get(i).setChecked(state.entityVisibility[i]);
+        if (checkboxesContainer != null) {
+            for (int i = 0; i < checkboxesContainer.getChildCount(); i++) {
+                CoolCheckbox checkbox = (CoolCheckbox) checkboxesContainer.getChildAt(i);
+                checkbox.setChecked(state.entityVisibility[i]);
+            }
         }
 
         mainChartView.setSelectedPointIndex(state.selectedPointIndex);
@@ -146,6 +158,7 @@ public class ChartView extends LinearLayout {
         if (navigationChartView != null) {
             NavigationBounds bounds = navigationChartView.getBounds();
             if (bounds != null) {
+                List<Entity> entities = chartData.entities;
                 boolean[] visibilities = new boolean[entities.size()];
                 for (int i = 0; i < entities.size(); i++) {
                     visibilities[i] = entities.get(i).isVisible();
@@ -167,70 +180,8 @@ public class ChartView extends LinearLayout {
         mainChartView.setVerticalItemsCount(count);
     }
 
-    public void addEntities(List<Entity> entities) {
-        for (Entity entity: entities) {
-            addEntity(entity);
-        }
-    }
-
-    public void addEntity(final Entity entity) {
-        if (entity.values.length != chartData.axis.values.length) {
-            throw new IllegalArgumentException(
-                    "Entity valuesByEntity must correspond to horizontalAxis " +
-                            "marks (they must be equal is size)");
-        }
-        entities.add(entity);
-        mainChartView.addEntity(entity);
-        navigationChartView.addEntity(entity);
-
-        Resources r = getContext().getResources();
-
-        if (entities.size() > 1) {
-            View divider = new View(getContext());
-            LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    r.getDimensionPixelSize(R.dimen.chart_checkbox_divider_height));
-            divider.setBackgroundColor(dividerColor);
-            lp.leftMargin = r.getDimensionPixelSize(
-                    R.dimen.chart_checkbox_divider_margin_left);
-            addView(divider, lp);
-        }
-        int[][] states = new int[][] {
-                new int[] {-android.R.attr.state_checked},
-                new int[] { android.R.attr.state_checked}
-        };
-        CheckBox checkBox = new CheckBox(getContext());
-        checkBox.setText(entity.title);
-        ColorStateList colorStateList =
-                new ColorStateList(states, new int[]{entity.color, entity.color});
-        CompoundButtonCompat.setButtonTintList(checkBox, colorStateList);
-        checkBox.setChecked(true);
-        checkBox.setTextColor(checkboxTextColor);
-        checkBox.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
-            @Override
-            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                entity.setVisible(isChecked);
-                onEntityChanged(entity);
-            }
-        });
-        LinearLayout.LayoutParams lp =
-                new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.topMargin = r.getDimensionPixelSize(R.dimen.chart_checkbox_margin_top);
-        lp.bottomMargin = r.getDimensionPixelSize(R.dimen.chart_checkbox_margin_bottom);
-        lp.leftMargin = r.getDimensionPixelSize(R.dimen.chart_margin_left);
-        checkBox.setPadding(
-                r.getDimensionPixelSize(R.dimen.chart_text_padding_left),
-                0, 0, 0);
-        checkBox.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                r.getDimension(R.dimen.chart_text_size));
-        addView(checkBox, lp);
-        checkBoxes.add(checkBox);
-    }
-
     private boolean hasVisibleEntity() {
-        for (Entity item: entities) {
+        for (Entity item: chartData.entities) {
             if (item.isVisible()) {
                 return true;
             }
@@ -313,8 +264,9 @@ public class ChartView extends LinearLayout {
         Resources r = getResources();
         int height = r.getDimensionPixelSize(
                 R.dimen.chart_navigation_chart_height);
-        addView(navigationChartView, new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, height));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, height);
+        addView(navigationChartView, lp);
     }
 
     private void createMainChartView() {
@@ -329,13 +281,75 @@ public class ChartView extends LinearLayout {
         addView(mainChartView);
     }
 
-    public void setChartData(ChartData chartData) {
+    public void setChartData(final ChartData chartData) {
         this.chartData = chartData;
 
         setTitle(chartData.title);
-        mainChartView.setHorizontalAxis(chartData.axis);
+
+        mainChartView.setChartData(chartData);
         navigationChartView.setChartData(chartData);
-        addEntities(chartData.entities);
+
+        if (chartData.entities.size() > 1) {
+            addCheckboxes();
+        }
+        else {
+            LinearLayout.LayoutParams lp =
+                    (LinearLayout.LayoutParams)navigationChartView.getLayoutParams();
+            lp.bottomMargin = getResources().getDimensionPixelSize(
+                    R.dimen.chart_navigation_margin_bottom);
+        }
+    }
+
+    @SuppressWarnings("ConstantConditions")
+    private void addCheckboxes() {
+        createCheckboxesContainer();
+        Resources r = getContext().getResources();
+        for (final Entity entity: chartData.entities) {
+            CoolCheckbox coolCheckbox = new CoolCheckbox(getContext());
+            coolCheckbox.setText(entity.title);
+            coolCheckbox.setColor(entity.color);
+            coolCheckbox.setChecked(true);
+            coolCheckbox.setListener(new CoolCheckbox.Listener() {
+                @Override
+                public void onCheckedChanged(boolean isChecked) {
+                    entity.setVisible(isChecked);
+                    onEntityChanged(entity);
+
+                    List<Entity> visibleEntities = new ArrayList<>();
+                    for (Entity entity: chartData.entities) {
+                        if (entity.isVisible()) {
+                            visibleEntities.add(entity);
+                        }
+                    }
+
+                    if (visibleEntities.size() == 1) {
+                        checkboxes.get(visibleEntities.get(0)).setUncheckable(false);
+                    }
+                    else if (visibleEntities.size() == 2 &&
+                            chartData.type == ChartData.TYPE_PERCENTAGE) {
+                        for (Entity entity: visibleEntities) {
+                            checkboxes.get(entity).setUncheckable(false);
+                        }
+                    }
+                    else {
+                        for (Entity entity: visibleEntities) {
+                            checkboxes.get(entity).setUncheckable(true);
+                        }
+                    }
+                }
+            });
+            coolCheckbox.setTextSize(r.getDimension(R.dimen.chart_text_size));
+
+            int marginVertical = r.getDimensionPixelSize(
+                    R.dimen.chart_checkbox_margin_vertical);
+            int marginHorizontal = r.getDimensionPixelSize(
+                    R.dimen.chart_checkbox_margin_right);
+
+            FlowLayout.LayoutParams lp =
+                    new FlowLayout.LayoutParams(marginHorizontal, marginVertical);
+            checkboxesContainer.addView(coolCheckbox, lp);
+            checkboxes.put(entity, coolCheckbox);
+        }
     }
 
     public void setTitle(String title) {

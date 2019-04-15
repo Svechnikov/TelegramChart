@@ -2,4 +2,5 @@
 <resources>
     <color name="dark_window_background">#151E27</color>
     <color name="light_window_background">#F0F0F0</color>
+    <color name="fallback_status_bar_light_color">#333333</color>
 </resources>

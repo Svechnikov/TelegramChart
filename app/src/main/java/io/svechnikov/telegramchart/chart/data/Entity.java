@@ -2,7 +2,8 @@ package io.svechnikov.telegramchart.chart.data;
 
 public class Entity {
 
-    public final int color;
+    public final int originalColor;
+    public int color;
     public final String title;
     public final int[] values;
 
@@ -11,7 +12,10 @@ public class Entity {
 
     private boolean isVisible = true;
 
-    public Entity(int color, String title, int[] values) {
+    public Entity(int color,
+                  String title,
+                  int[] values) {
+        this.originalColor = color;
         this.color = color;
         this.title = title;
         this.values = values;
@@ -19,9 +23,9 @@ public class Entity {
         int max = Integer.MIN_VALUE;
         int min = Integer.MAX_VALUE;
 
-        for (int i = 0; i < values.length; i++) {
-            max = Math.max(values[i], max);
-            min = Math.min(values[i], min);
+        for (int value: values) {
+            max = Math.max(value, max);
+            min = Math.min(value, min);
         }
 
         minValue = min;

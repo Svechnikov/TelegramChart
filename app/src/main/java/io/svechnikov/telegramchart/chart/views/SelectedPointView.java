@@ -12,10 +12,18 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
+import android.view.animation.AnimationUtils;
+import android.widget.FrameLayout;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
+import android.widget.TextSwitcher;
 import android.widget.TextView;
+import android.widget.ViewSwitcher;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -30,7 +38,7 @@ import io.svechnikov.telegramchart.chart.data.SelectedPoint;
 public class SelectedPointView extends LinearLayout {
 
     private SelectedPoint selectedPoint;
-    private TextView title;
+    private TextSwitcher title;
     private boolean animationCanceled;
     private boolean showing;
     private boolean showAfterMeasure;
@@ -43,22 +51,28 @@ public class SelectedPointView extends LinearLayout {
     private final RectF rect = new RectF();
     private final int horizontalOffset;
     private int currentEntitiesCount = -1;
-    private final int valueTextSize;
-    private final int valueMarkTextSize;
-    private final int valueMarginRight;
     private final int rowTopMargin;
+    private final int textColor;
     private final ValueAnimator visibilityAnimator;
     private final ValueAnimator translationAnimator;
     private float pendingTranslation;
     private boolean wasShown;
+    private Map<Entity, TextSwitcher> viewValues = new HashMap<>();
+    private Map<Entity, TextView> viewValuesPercent = new HashMap<>();
+    private final int textSize;
+    private float prevX;
+    private boolean hasPercentValues;
 
-    private static final int COLUMNS_COUNT = 2;
+    private final Animation animInTop;
+    private final Animation animOutTop;
+    private final Animation animInBottom;
+    private final Animation animOutBottom;
 
     private final Runnable showRunnable = new Runnable() {
         @Override
         public void run() {
             showAfterMeasure = false;
-            int width = getMeasuredWidth();
+            int width = Math.max(getMeasuredWidth(), getMinimumWidth());
             float x = selectedPoint.x;
             int parentWidth = ((View)getParent()).getMeasuredWidth();
             float translationX;
@@ -117,7 +131,7 @@ public class SelectedPointView extends LinearLayout {
         this(context, attrs, -1);
     }
 
-    public SelectedPointView(Context context,
+    public SelectedPointView(final Context context,
                              @Nullable AttributeSet attrs,
                              int defStyleAttr) {
         super(context, attrs, defStyleAttr);
@@ -130,45 +144,55 @@ public class SelectedPointView extends LinearLayout {
                 R.attr.selectedPointInfoStrokeColor};
         TypedArray ta = context.obtainStyledAttributes(style);
         backgroundColor = ta.getColor(0, Color.WHITE);
-        int titleColor = ta.getColor(1, Color.BLACK);
+        textColor = ta.getColor(1, Color.BLACK);
         backgroundStrokeColor = ta.getColor(2, Color.BLACK);
         ta.recycle();
 
         setOrientation(VERTICAL);
 
-        Resources r = getResources();
+        final Resources r = getResources();
 
         rowTopMargin = r.getDimensionPixelSize(
-                R.dimen.chart_selected_point_info_row_top_margin);
-        valueTextSize = r.getDimensionPixelSize(
-                R.dimen.chart_selected_point_info_value_text_size);
-        valueMarkTextSize = r.getDimensionPixelSize(
-                R.dimen.chart_selected_point_info_value_mark_text_size);
+                R.dimen.chart_selected_point_row_margin_top);
         horizontalOffset = r.getDimensionPixelSize(
-                R.dimen.chart_selected_point_info_hor_offset);
+                R.dimen.chart_selected_point_hor_offset);
         topMargin = r.getDimensionPixelSize(R.dimen.chart_main_chart_plot_top_padding);
-        valueMarginRight = r.getDimensionPixelSize(
-                R.dimen.chart_selected_point_info_value_margin_right);
+        textSize = r.getDimensionPixelSize(
+                R.dimen.chart_selected_point_text_size);
+        final int titleTextSize = r.getDimensionPixelSize(
+                R.dimen.chart_selected_point_title_text_size);
 
-        int padding = r.getDimensionPixelSize(
-                R.dimen.chart_selected_point_info_padding);
+        final int padding = r.getDimensionPixelSize(
+                R.dimen.chart_selected_point_padding);
 
-        setPadding(padding, padding, padding, padding);
+        setPadding(padding, 0, padding, padding);
 
-        title = new TextView(context);
-        title.setTextColor(titleColor);
-        title.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                r.getDimensionPixelSize(
-                        R.dimen.chart_selected_point_info_title_text_size));
+        animInTop = AnimationUtils.loadAnimation(context, R.anim.slide_in_top);
+        animInBottom = AnimationUtils.loadAnimation(context, R.anim.slide_in_bottom);
+        animOutBottom = AnimationUtils.loadAnimation(context, R.anim.slide_out_bottom);
+        animOutTop = AnimationUtils.loadAnimation(context, R.anim.slide_out_top);
+        title = new TextSwitcher(context);
+        title.setFactory(new ViewSwitcher.ViewFactory() {
+            @Override
+            public View makeView() {
+                TextView title = new TextView(context);
+                title.setTypeface(null, Typeface.BOLD);
+                title.setPadding(0, padding, 0, padding);
+                title.setTextColor(textColor);
+                title.setTextSize(TypedValue.COMPLEX_UNIT_PX,
+                        titleTextSize);
+                return title;
+            }
+        });
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);
         addView(title, lp);
 
         cornersRadius = r.getDimension(
-                R.dimen.chart_selected_point_info_corner_radius);
+                R.dimen.chart_selected_point_corner_radius);
         backgroundStrokeWidth = r.getDimensionPixelSize(
-                R.dimen.chart_selected_point_info_stroke_width);
+                R.dimen.chart_selected_point_stroke_width);
 
         setVisibility(GONE);
 
@@ -240,6 +264,10 @@ public class SelectedPointView extends LinearLayout {
         });
     }
 
+    public void setHasPercentValues(boolean hasPercentValues) {
+        this.hasPercentValues = hasPercentValues;
+    }
+
     private void animateShow() {
         visibilityAnimator.setFloatValues(0, 1);
         visibilityAnimator.start();
@@ -290,7 +318,12 @@ public class SelectedPointView extends LinearLayout {
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        int width = getMeasuredWidth();
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        if (width == 0) {
+            setMinimumWidth((int)(getMeasuredWidth()* 1.3f));
+        }
 
         if (getMeasuredWidth() > 0 && showAfterMeasure) {
             doShow(true);
@@ -302,6 +335,7 @@ public class SelectedPointView extends LinearLayout {
     }
 
     public void show(boolean animate) {
+        boolean wasShowing = showing;
         if (!showing) {
             showing = true;
             setVisibility(VISIBLE);
@@ -309,14 +343,29 @@ public class SelectedPointView extends LinearLayout {
                 setAlpha(0);
                 animateShow();
             }
+            title.setCurrentText(selectedPoint.title);
         }
-        title.setText(selectedPoint.title);
+        else {
+            Animation animIn;
+            Animation animOut;
+            if (selectedPoint.x > prevX) {
+                animIn = animInTop;
+                animOut = animOutBottom;
+            }
+            else {
+                animIn = animInBottom;
+                animOut = animOutTop;
+            }
+            title.setInAnimation(animIn);
+            title.setOutAnimation(animOut);
+            title.setText(selectedPoint.title);
+        }
+
+        prevX = selectedPoint.x;
         if (currentEntitiesCount == -1) {
             createEntitiesContainer();
         }
-        else {
-            fillEntitiesContainer();
-        }
+        fillEntitiesContainer(wasShowing);
 
         if (getMeasuredWidth() == 0) {
             removeCallbacks(hideRunnable);
@@ -327,16 +376,23 @@ public class SelectedPointView extends LinearLayout {
         }
     }
 
-    private Map<Entity, TextView[]> viewValues = new HashMap<>();
-
-    private void fillEntitiesContainer() {
+    @SuppressWarnings("ConstantConditions")
+    private void fillEntitiesContainer(boolean animate) {
         List<Entity> entities = new ArrayList<>(selectedPoint.values.keySet());
 
         for (Entity entity: entities) {
-            TextView[] values = viewValues.get(entity);
-            if (values != null && values.length == 2) {
-                values[0].setText(String.valueOf(selectedPoint.values.get(entity)));
-                values[1].setText(entity.title);
+            String value = String.valueOf(selectedPoint.values.get(entity));
+            TextSwitcher switcher = viewValues.get(entity);
+            if (animate) {
+                switcher.setText(value);
+            }
+            else {
+                switcher.setCurrentText(value);
+            }
+
+            if (hasPercentValues) {
+                String percentValue = selectedPoint.percentValues.get(entity) + "%";
+                viewValuesPercent.get(entity).setText(percentValue);
             }
         }
     }
@@ -351,62 +407,98 @@ public class SelectedPointView extends LinearLayout {
 
         viewValues.clear();
 
-        LinearLayout.LayoutParams simpleLayoutParams =
+        LinearLayout.LayoutParams lineLayoutParams =
                 new LinearLayout.LayoutParams(
-                        ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
+        lineLayoutParams.bottomMargin = rowTopMargin;
 
-        int rowsCount = (int)Math.ceil((float)currentEntitiesCount / COLUMNS_COUNT);
-        List<Entity> entities = new ArrayList<>(selectedPoint.values.keySet());
+        int percentPadding = 0;
+        if (hasPercentValues) {
+            percentPadding = getResources()
+                    .getDimensionPixelSize(
+                            R.dimen.chart_selected_point_percent_padding_right);
+        }
+        for (final Entity entity: selectedPoint.values.keySet()) {
+            TextView percentValueView = null;
 
+            if (hasPercentValues) {
+                percentValueView = new TextView(getContext());
+                percentValueView.setTextColor(textColor);
+                percentValueView.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+                percentValueView.setTypeface(null, Typeface.BOLD);
+                percentValueView.setId(R.id.selectedPointPercentValue);
+                percentValueView.setPadding(0, 0, percentPadding, 0);
+                percentValueView.setText("100%");
+                percentValueView.measure(0, 0);
+                percentValueView.setLayoutParams(
+                        new RelativeLayout.LayoutParams(percentValueView.getMeasuredWidth(),
+                        ViewGroup.LayoutParams.WRAP_CONTENT));
+                percentValueView.setGravity(Gravity.RIGHT);
+                percentValueView.setSingleLine(true);
+                viewValuesPercent.put(entity, percentValueView);
+                percentValueView.setText(null);
+            }
 
-        LinearLayout columns = new LinearLayout(getContext());
-        columns.setOrientation(HORIZONTAL);
-        for (int i = 0; i < COLUMNS_COUNT; i++) {
-            LinearLayout column = new LinearLayout(getContext());
-            column.setOrientation(VERTICAL);
-            for (int j = 0; j < rowsCount; j++) {
-                int index = j * COLUMNS_COUNT + i;
-                if (index == entities.size()) {
-                    break;
-                }
-                Entity entity = entities.get(index);
+            TextView labelView = new TextView(getContext());
+            labelView.setText(entity.title);
+            labelView.setTextColor(textColor);
+            labelView.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+            labelView.setId(R.id.selectedPointLabel);
 
-                LinearLayout.LayoutParams lp =
-                        new LinearLayout.LayoutParams(
+            if (hasPercentValues) {
+                RelativeLayout.LayoutParams lp =
+                        new RelativeLayout.LayoutParams(
                                 ViewGroup.LayoutParams.WRAP_CONTENT,
                                 ViewGroup.LayoutParams.WRAP_CONTENT);
-                lp.topMargin = rowTopMargin;
-
-                TextView value = new TextView(getContext());
-                value.setTextSize(TypedValue.COMPLEX_UNIT_PX, valueTextSize);
-                value.setTextColor(entity.color);
-                value.setText(String.valueOf(selectedPoint.values.get(entity)));
-                value.setTypeface(null, Typeface.BOLD);
-                value.setSingleLine(true);
-                column.addView(value, lp);
-
-                TextView valueMark = new TextView(getContext());
-                valueMark.setTextSize(TypedValue.COMPLEX_UNIT_PX, valueMarkTextSize);
-                valueMark.setTextColor(entity.color);
-                valueMark.setText(entity.title);
-                valueMark.setSingleLine(true);
-                column.addView(valueMark, simpleLayoutParams);
-
-                viewValues.put(entity, new TextView[]{value, valueMark});
+                lp.addRule(
+                        RelativeLayout.RIGHT_OF, R.id.selectedPointPercentValue);
+                labelView.setLayoutParams(lp);
             }
-            if (column.getChildCount() == 0) {
-                break;
+
+            TextSwitcher valueView = new TextSwitcher(getContext());
+            valueView.setFactory(new ViewSwitcher.ViewFactory() {
+                @Override
+                public View makeView() {
+                    TextView textView = new TextView(getContext());
+                    textView.setTypeface(null, Typeface.BOLD);
+                    textView.setTextColor(entity.color);
+                    textView.setTextSize(TypedValue.COMPLEX_UNIT_PX, textSize);
+                    FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+                    textView.setGravity(Gravity.RIGHT);
+                    textView.setLayoutParams(lp);
+                    return textView;
+                }
+            });
+
+            Animation inAnimation = new AlphaAnimation(0, 1);
+            inAnimation.setDuration(250);
+            Animation outAnimation = new AlphaAnimation(1, 0);
+            outAnimation.setDuration(250);
+            valueView.setInAnimation(inAnimation);
+            valueView.setOutAnimation(outAnimation);
+
+            viewValues.put(entity, valueView);
+
+            RelativeLayout container = new RelativeLayout(getContext());
+            if (percentValueView != null) {
+                container.addView(percentValueView);
             }
-            LinearLayout.LayoutParams lp  = new LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT);
-            if (i < COLUMNS_COUNT - 1) {
-                lp.rightMargin = valueMarginRight;
-            }
-            columns.addView(column, lp);
+            container.addView(labelView);
+
+            RelativeLayout.LayoutParams alignRightLayoutParams =
+                    new RelativeLayout.LayoutParams(
+                            ViewGroup.LayoutParams.MATCH_PARENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+            alignRightLayoutParams.addRule(
+                    RelativeLayout.RIGHT_OF, R.id.selectedPointLabel);
+
+            container.addView(valueView, alignRightLayoutParams);
+
+            addView(container, lineLayoutParams);
         }
-        addView(columns, simpleLayoutParams);
     }
 
     private void doShow(boolean now) {

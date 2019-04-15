@@ -3,4 +3,12 @@
     <string name="charts_title">Statistics</string>
     <string name="chart_indexed_title">Chart #%d</string>
     <string name="no_data">No charts chosen</string>
+
+    <string-array name="chart_titles">
+        <item>Followers</item>
+        <item>Interactions</item>
+        <item>Messages</item>
+        <item>Views</item>
+        <item>Apps</item>
+    </string-array>
 </resources>

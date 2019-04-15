@@ -5,8 +5,6 @@ import android.os.Parcelable;
 
 import java.util.Arrays;
 
-import timber.log.Timber;
-
 public class ChartViewState implements Parcelable {
 
     public final NavigationBounds navigationBounds;
