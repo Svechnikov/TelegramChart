@@ -196,11 +196,6 @@ public class MainActivity extends FragmentActivity {
                 return null;
             }
 
-            try {
-                //Thread.sleep(3000);
-            }
-            catch (Exception e) {}
-
             return chartsRepo.getCharts();
         }
 
